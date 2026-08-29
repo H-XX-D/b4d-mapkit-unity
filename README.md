@@ -20,7 +20,7 @@ https://github.com/H-XX-D/b4d-mapkit-unity.git
 
 Or clone it into `Packages/com.blox4dead.mapkit`. Unity 2021.3 or newer.
 
-Pin a release by adding a tag: `...b4d-mapkit-unity.git#v1.3.0`. Unity locks a
+Pin a release by adding a tag: `...b4d-mapkit-unity.git#v1.3.2`. Unity locks a
 git package to the commit it first resolved, so use **Update** in Package
 Manager to move forward, or delete the entry from `Packages/packages-lock.json`.
 
