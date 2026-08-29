@@ -1,0 +1,1 @@
+{ "name": "B4DMapKit.Editor", "rootNamespace": "B4D", "references": ["B4DMapKit.Runtime"], "includePlatforms": ["Editor"] }
