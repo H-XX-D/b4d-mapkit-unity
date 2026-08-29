@@ -17,7 +17,7 @@ Package Manager ▸ **Add package from git URL**:
 https://github.com/H-XX-D/b4d-mapkit-unity.git
 ```
 
-Unity 2021.3 or newer. To pin a release, add a tag: `...unity.git#v1.5.0`.
+Unity 2021.3 or newer. To pin a release, add a tag: `...unity.git#v1.6.0`.
 
 Unity locks a git package to the commit it first resolved, so use **Update** in
 Package Manager to pull newer versions.
@@ -155,6 +155,46 @@ exporter that reads only one gets nothing and writes black, which loads without
 error and looks like a lighting bug. The baker probes all of them, and when it
 still cannot find a base colour it bakes plain grey and names the material and
 shader that defeated it.
+
+### Where things go
+
+The kit keeps what it makes in one place, and the save dialogs start there:
+
+```
+Assets/B4D/Meshes/    baked .glb files
+Assets/B4D/Maps/      exported campaign json
+```
+
+Both are created on first use. Nothing forces you to use them.
+
+### A baked mesh has no texture
+
+Bake, then run the inspector on the file. It reads it the way a viewer does and
+names the reason:
+
+```
+node Tools~/glb-inspect/inspect.mjs Assets/B4D/Meshes/crate.glb
+```
+
+The causes it finds, in rough order of how often they turn up:
+
+**The mesh has no UVs.** A texture with nowhere to sit imports untextured
+everywhere. Unity hides this because its own shaders fall back; glTF has no
+fallback. The baker now warns at bake time too.
+
+**The material's base colour is near black.** The colour factor multiplies the
+texture, so a black factor renders black even though the image is right there.
+This is the single most common "the textures are missing" report.
+
+**Blender is in Solid shading mode**, which ignores textures entirely. Switch to
+Material Preview or Rendered. Worth ruling out first, because it costs nothing.
+
+**The texture is not an ordinary 2D texture.** Render textures, arrays and
+cubemaps cannot be read back into an image. The baker names the material rather
+than dropping it silently.
+
+**The texture slot is empty**, or the art is assigned to a property the shader
+does not actually use. The bake report names the material.
 
 See [LICENSING.md](LICENSING.md) before baking purchased art. Short version:
 shipping inside a Discord Activity is a good position, and the only thing worth

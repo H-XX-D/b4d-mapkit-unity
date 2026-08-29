@@ -26,7 +26,8 @@ namespace B4D
 
             var path = EditorUtility.SaveFilePanelInProject(
                 "Bake to glb", suggested, "glb",
-                "The game loads this file. Keeping it inside the project lets a model prop point at it.");
+                "The game loads this file. Keeping it inside the project lets a model prop point at it.",
+                B4DProjectPaths.EnsureMeshes());
             if (string.IsNullOrEmpty(path)) return;
 
             var options = new B4DBakeOptions

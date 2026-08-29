@@ -63,6 +63,21 @@ Specific places worth testing early:
 - Model props cannot be imported back from a map file. A base64 blob cannot be
   turned back into a project asset, so import skips them and says so.
 
+## Diagnosing a bad bake
+
+```
+node Tools~/glb-inspect/inspect.mjs <file.glb>
+```
+
+Reads a baked file the way a viewer does and names why it would import
+untextured: no UVs on a textured mesh, a near black colour factor multiplying
+the image away, a missing mimeType, bytes that are not an image, an external
+image reference, or an unpadded chunk length. It is tested against a file built
+for each of those faults.
+
+If it reports the chain is intact and Blender still shows nothing, check the
+viewport shading mode. Solid ignores textures.
+
 ## Reporting something
 
 Useful in a report:

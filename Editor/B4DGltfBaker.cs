@@ -75,10 +75,15 @@ namespace B4D
         // entry point
         // ------------------------------------------------------------------
 
+        /// Textures already embedded in the bake in progress, so one shared texture
+        /// is written once rather than once per material.
+        static readonly Dictionary<Texture2D, int> TextureIndices = new Dictionary<Texture2D, int>();
+
         public static byte[] Bake(GameObject root, B4DBakeOptions options, out B4DBakeReport report)
         {
             options = options ?? new B4DBakeOptions();
             report = new B4DBakeReport();
+            TextureIndices.Clear();
             if (root == null) throw new ArgumentNullException(nameof(root));
 
             var bin = new MemoryStream();
@@ -125,6 +130,17 @@ namespace B4D
                             materialIndices[material] = materialIndex;
                         }
                         primitive["material"] = materialIndex;
+                    }
+
+                    // A texture with nowhere to sit imports untextured in every
+                    // viewer. Unity hides this because its own shaders fall back;
+                    // glTF has no such fallback.
+                    var attributeSet = (Dictionary<string, object>)primitive["attributes"];
+                    if (!attributeSet.ContainsKey("TEXCOORD_0") && PrimitiveIsTextured(gltf, primitive))
+                    {
+                        report.warnings.Add(
+                            $"\"{source.transform.name}\" has a textured material but no UVs, so it will import " +
+                            "untextured everywhere. Give the mesh texture coordinates, or use a flat colour material.");
                     }
 
                     primitives.Add(primitive);
@@ -372,17 +388,34 @@ namespace B4D
 
             if (texture is Texture2D texture2D)
             {
-                var png = EncodeTexture(texture2D, options.maxTextureSize, report);
-                if (png != null)
+                // The same texture on several materials is embedded once.
+                if (!TextureIndices.TryGetValue(texture2D, out var index))
                 {
-                    var index = gltf.AddImage(bin, png, "image/png");
-                    pbr["baseColorTexture"] = new Dictionary<string, object> { ["index"] = index };
-                    report.textures++;
+                    var png = EncodeTexture(texture2D, options.maxTextureSize, report);
+                    if (png != null)
+                    {
+                        index = gltf.AddImage(bin, png, "image/png");
+                        TextureIndices[texture2D] = index;
+                        report.textures++;
+                    }
+                    else index = -1;
                 }
+                if (index >= 0) pbr["baseColorTexture"] = new Dictionary<string, object> { ["index"] = index };
             }
             else if (options.includeTextures && textureProperty != null && texture == null)
             {
                 report.warnings.Add($"material \"{material.name}\" has a texture slot but nothing assigned to it.");
+            }
+            else if (options.includeTextures && texture != null)
+            {
+                // Anything that is not a plain 2D texture, a render texture, an
+                // array, a cubemap, cannot be read back into an image. Saying so
+                // matters: the file would otherwise arrive untextured with no clue
+                // why, which is exactly the report this guards against.
+                report.warnings.Add(
+                    $"material \"{material.name}\" uses a {texture.GetType().Name} for its base colour, " +
+                    "which cannot be baked into a glb. Only ordinary 2D textures can. " +
+                    "The material was baked without a texture.");
             }
 
             if (color.a < 1f)
@@ -392,6 +425,17 @@ namespace B4D
 
             gltf.materials.Add(json);
             return gltf.materials.Count - 1;
+        }
+
+        /// True when the primitive's material carries a base colour texture.
+        static bool PrimitiveIsTextured(GltfDocument gltf, Dictionary<string, object> primitive)
+        {
+            if (!primitive.TryGetValue("material", out var index)) return false;
+            var i = (int)index;
+            if (i < 0 || i >= gltf.materials.Count) return false;
+            var pbr = gltf.materials[i].TryGetValue("pbrMetallicRoughness", out var p)
+                ? p as Dictionary<string, object> : null;
+            return pbr != null && pbr.ContainsKey("baseColorTexture");
         }
 
         static string FirstPresent(Material material, string[] candidates)
@@ -518,6 +562,7 @@ namespace B4D
             public List<Dictionary<string, object>> materials = new List<Dictionary<string, object>>();
             public List<Dictionary<string, object>> images = new List<Dictionary<string, object>>();
             public List<Dictionary<string, object>> textures = new List<Dictionary<string, object>>();
+            public List<Dictionary<string, object>> samplers = new List<Dictionary<string, object>>();
             public List<Dictionary<string, object>> nodes = new List<Dictionary<string, object>>();
             public List<Dictionary<string, object>> scenes = new List<Dictionary<string, object>>();
 
@@ -607,7 +652,21 @@ namespace B4D
                     ["bufferView"] = view,
                     ["mimeType"] = mimeType
                 });
-                textures.Add(new Dictionary<string, object> { ["source"] = images.Count - 1 });
+                if (samplers.Count == 0)
+                {
+                    samplers.Add(new Dictionary<string, object>
+                    {
+                        ["magFilter"] = 9729,   // LINEAR
+                        ["minFilter"] = 9987,   // LINEAR_MIPMAP_LINEAR
+                        ["wrapS"] = 10497,      // REPEAT
+                        ["wrapT"] = 10497
+                    });
+                }
+                textures.Add(new Dictionary<string, object>
+                {
+                    ["source"] = images.Count - 1,
+                    ["sampler"] = 0
+                });
                 return textures.Count - 1;
             }
 
@@ -636,6 +695,7 @@ namespace B4D
                 if (materials.Count > 0) root["materials"] = materials.Cast<object>().ToList();
                 if (images.Count > 0) root["images"] = images.Cast<object>().ToList();
                 if (textures.Count > 0) root["textures"] = textures.Cast<object>().ToList();
+                if (samplers.Count > 0) root["samplers"] = samplers.Cast<object>().ToList();
                 return B4DJson.Write(root, false);
             }
         }

@@ -166,6 +166,7 @@ namespace UnityEditor
         public static int DisplayDialogComplex(string title, string message, string ok, string cancel, string alt) => 0;
         public static string SaveFilePanel(string title, string directory, string defaultName, string extension) => "";
         public static string SaveFilePanelInProject(string title, string defaultName, string extension, string message) => "";
+        public static string SaveFilePanelInProject(string title, string defaultName, string extension, string message, string path) => "";
         public static string OpenFilePanel(string title, string directory, string extension) => "";
         public static string OpenFolderPanel(string title, string folder, string defaultName) => "";
         public static void SetDirty(UnityEngine.Object target) { }

@@ -89,7 +89,7 @@ namespace B4D
         void DrawImportRow()
         {
             if (!GUILayout.Button("Import JSON into the scene")) return;
-            var path = EditorUtility.OpenFilePanel("Import campaign JSON", Application.dataPath, "json");
+            var path = EditorUtility.OpenFilePanel("Import campaign JSON", B4DProjectPaths.EnsureMaps(), "json");
             if (string.IsNullOrEmpty(path)) return;
             try
             {
@@ -141,7 +141,8 @@ namespace B4D
                 EditorUtility.DisplayDialog("Cannot export", "Fix the errors first.", "OK");
                 return;
             }
-            var path = EditorUtility.SaveFilePanel("Export campaign JSON", Application.dataPath, $"{campaign.id}.json", "json");
+            var path = EditorUtility.SaveFilePanel("Export campaign JSON",
+                B4DProjectPaths.EnsureMaps(), $"{campaign.id}.json", "json");
             if (string.IsNullOrEmpty(path)) return;
             // Any mesh not carried inline is copied to an assets folder beside the map.
             B4DExporter.OutputDirectory = Path.GetDirectoryName(path);
