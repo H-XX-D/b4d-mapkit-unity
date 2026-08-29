@@ -8,14 +8,14 @@ Unity scene  ──►  campaign JSON  ──►  playable map
 ```
 
 The Unreal edition of the same kit exports the identical format:
-[b4d-mapkit-unreal](https://github.com/hendrixx-cnc/b4d-mapkit-unreal).
+[b4d-mapkit-unreal](https://github.com/H-XX-D/b4d-mapkit-unreal).
 
 ## Install
 
 Package Manager ▸ **Add package from git URL**:
 
 ```
-https://github.com/hendrixx-cnc/b4d-mapkit-unity.git
+https://github.com/H-XX-D/b4d-mapkit-unity.git
 ```
 
 Or clone it into `Packages/com.blox4dead.mapkit`. Unity 2021.3 or newer.
