@@ -18,6 +18,9 @@ namespace B4D
 
         public bool includeVertexColors = false;
         public bool includeTextures = true;
+
+        [Tooltip("Drop mesh, node and material names from the baked file. The game never reads them, and they are the part that identifies which pack a mesh came from. On by default for shipping.")]
+        public bool stripNames = true;
     }
 
     public class B4DBakeReport
@@ -136,9 +139,12 @@ namespace B4D
             report.materials = materialIndices.Count;
 
             gltf.meshes.Add(new Dictionary<string, object> { ["primitives"] = primitives });
-            gltf.nodes.Add(new Dictionary<string, object> { ["mesh"] = 0, ["name"] = root.name });
+            var node = new Dictionary<string, object> { ["mesh"] = 0 };
+            if (!options.stripNames) node["name"] = root.name;
+            gltf.nodes.Add(node);
             gltf.scenes.Add(new Dictionary<string, object> { ["nodes"] = new List<object> { 0 } });
 
+            gltf.stripNames = options.stripNames;
             var bytes = Package(gltf, bin.ToArray());
             report.bytes = bytes.Length;
 
@@ -315,11 +321,11 @@ namespace B4D
             B4DBakeOptions options, B4DBakeReport report)
         {
             var pbr = new Dictionary<string, object>();
-            var json = new Dictionary<string, object>
-            {
-                ["name"] = material.name,
-                ["pbrMetallicRoughness"] = pbr
-            };
+            var json = new Dictionary<string, object> { ["pbrMetallicRoughness"] = pbr };
+            // Names are useful while authoring and are pure liability in a shipped
+            // file: they are what identifies the pack a mesh came from. The reader
+            // never looks at them.
+            if (!options.stripNames) json["name"] = material.name;
 
             var colorProperty = FirstPresent(material, ColorProperties);
             var textureProperty = FirstPresent(material, TextureProperties);
@@ -505,6 +511,7 @@ namespace B4D
 
         class GltfDocument
         {
+            public bool stripNames;
             public List<Dictionary<string, object>> accessors = new List<Dictionary<string, object>>();
             public List<Dictionary<string, object>> bufferViews = new List<Dictionary<string, object>>();
             public List<Dictionary<string, object>> meshes = new List<Dictionary<string, object>>();
@@ -608,11 +615,13 @@ namespace B4D
             {
                 var root = new Dictionary<string, object>
                 {
-                    ["asset"] = new Dictionary<string, object>
-                    {
-                        ["version"] = "2.0",
-                        ["generator"] = "Blox 4 Dead Map Kit"
-                    },
+                    ["asset"] = stripNames
+                        ? new Dictionary<string, object> { ["version"] = "2.0" }
+                        : new Dictionary<string, object>
+                        {
+                            ["version"] = "2.0",
+                            ["generator"] = "Blox 4 Dead Map Kit"
+                        },
                     ["scene"] = 0,
                     ["scenes"] = scenes.Cast<object>().ToList(),
                     ["nodes"] = nodes.Cast<object>().ToList(),

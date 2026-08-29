@@ -20,7 +20,7 @@ https://github.com/H-XX-D/b4d-mapkit-unity.git
 
 Or clone it into `Packages/com.blox4dead.mapkit`. Unity 2021.3 or newer.
 
-Pin a release by adding a tag: `...b4d-mapkit-unity.git#v1.3.2`. Unity locks a
+Pin a release by adding a tag: `...b4d-mapkit-unity.git#v1.3.0`. Unity locks a
 git package to the commit it first resolved, so use **Update** in Package
 Manager to move forward, or delete the entry from `Packages/packages-lock.json`.
 
@@ -108,8 +108,14 @@ looks like a lighting bug. The baker probes all of these, and when it still
 cannot find a base colour it bakes a plain grey and names the material and
 shader that defeated it, because obviously unfinished beats silently black.
 
-Check the licence before shipping purchased art. See
-[LICENSING.md](LICENSING.md).
+Two bake defaults exist for shipping. **Inline in map** carries the mesh inside
+the page rather than as a `.glb` in the network tab, and **strip names** removes
+the mesh, node, material and generator names, which are the part that identifies
+which pack a mesh came from. Both are on. Turn stripping off while debugging a
+bake.
+
+Check the licence before shipping purchased art, though a Discord Activity is a
+much better position than an open web build. See [LICENSING.md](LICENSING.md).
 
 ## Type checking without Unity
 

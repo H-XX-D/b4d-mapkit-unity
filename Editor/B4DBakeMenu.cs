@@ -31,7 +31,8 @@ namespace B4D
 
             var options = new B4DBakeOptions
             {
-                maxTextureSize = EditorPrefs.GetInt("B4D.MaxTextureSize", 1024)
+                maxTextureSize = EditorPrefs.GetInt("B4D.MaxTextureSize", 1024),
+                stripNames = EditorPrefs.GetBool("B4D.StripNames", true)
             };
 
             B4DBakeReport report;
