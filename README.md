@@ -206,6 +206,23 @@ Duplicating a simple prop around the level is cheap in the map file: props that
 differ only in where they stand are collapsed into a single entry with an `at`
 list on export, and expanded back into individual objects on import.
 
+## Documentation
+
+- [PLAYTESTING.md](PLAYTESTING.md), getting a map you edited into the game.
+- [LICENSING.md](LICENSING.md), what you can ship, and the Asset Store caveat.
+- [VERIFICATION.md](VERIFICATION.md), what has been tested and what has not.
+
+## Type checking without Unity
+
+```
+./Tools~/compile-check/check.sh
+```
+
+Compiles the whole package against reference stubs of the Unity API, so a
+build machine with no Unity on it still catches type errors. Needs the .NET
+SDK (`brew install dotnet`). Unity ignores the folder because its name ends
+in `~`.
+
 ## Licence
 
 MIT. See [LICENSE.md](LICENSE.md).
