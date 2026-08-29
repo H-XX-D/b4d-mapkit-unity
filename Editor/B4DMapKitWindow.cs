@@ -73,9 +73,17 @@ namespace B4D
             var props = campaign.GetComponentsInChildren<B4DProp>(false).Length;
             var barrels = campaign.GetComponentsInChildren<B4DBarrel>(false).Length;
             var drops = campaign.GetComponentsInChildren<B4DDropHazard>(false).Length;
+            var models = campaign.GetComponentsInChildren<B4DModelProp>(false).Length;
+            var reference = campaign.GetComponentsInChildren<B4DReference>(false).Length;
             EditorGUILayout.LabelField(
-                $"{zones} zones · {objectives} objectives · {gates} gates · {props} props · {barrels + drops} hazards",
+                $"{zones} zones · {objectives} objectives · {gates} gates · {props + models} props · {barrels + drops} hazards",
                 EditorStyles.miniLabel);
+            if (reference > 0)
+            {
+                EditorGUILayout.LabelField(
+                    $"{reference} reference object(s) in the scene, none of which are exported",
+                    EditorStyles.miniLabel);
+            }
         }
 
         void DrawImportRow()
@@ -135,6 +143,8 @@ namespace B4D
             }
             var path = EditorUtility.SaveFilePanel("Export campaign JSON", Application.dataPath, $"{campaign.id}.json", "json");
             if (string.IsNullOrEmpty(path)) return;
+            // Any mesh not carried inline is copied to an assets folder beside the map.
+            B4DExporter.OutputDirectory = Path.GetDirectoryName(path);
             File.WriteAllText(path, B4DExporter.Export(campaign));
             lastWrittenPath = path;
             AssetDatabase.Refresh();

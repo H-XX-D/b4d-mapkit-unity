@@ -156,6 +156,14 @@ namespace B4D
             foreach (var entry in entries)
             {
                 var p = B4DJson.Obj(entry);
+                // Model props carry a mesh, and a base64 blob cannot be turned back
+                // into a project asset. Say so rather than dropping them in silence.
+                if (B4DJson.S(p, "type", "box") == "model")
+                {
+                    Debug.LogWarning($"[B4D] the map places the model asset \"{B4DJson.S(p, "asset", "?")}\", " +
+                        "which import cannot rebuild. Add a B4D Model Prop pointing at the glb yourself.");
+                    continue;
+                }
                 if (!System.Enum.TryParse<B4DPropType>(B4DJson.S(p, "type", "box"), out var type)) continue;
 
                 // One JSON entry with an `at` list becomes one object per position,

@@ -28,6 +28,16 @@ namespace B4D
     {
         static readonly string[] ObjectiveTypeNames = { "signal", "breakers", "fuel", "triangulate", "escort" };
 
+        /// Everything of a kind in the campaign, minus whatever sits under
+        /// scenery marked reference only. Those never travel to the game, so
+        /// holding them to the game's rules would only produce noise.
+        static List<T> Gather<T>(B4DCampaign root) where T : Component
+        {
+            return root.GetComponentsInChildren<T>(false)
+                .Where(c => !B4DExporter.UnderReference(c))
+                .ToList();
+        }
+
         public static List<B4DProblem> Validate(B4DCampaign root)
         {
             var problems = new List<B4DProblem>();
@@ -43,7 +53,7 @@ namespace B4D
             if (string.IsNullOrWhiteSpace(root.id)) Err("campaign id is empty", root);
             if (string.IsNullOrWhiteSpace(root.theme)) Err("campaign theme is empty", root);
 
-            var zones = root.GetComponentsInChildren<B4DZone>(false).ToList();
+            var zones = Gather<B4DZone>(root);
             if (zones.Count == 0)
             {
                 Err("the campaign has no zones, so there is nowhere to walk", root);
@@ -73,7 +83,7 @@ namespace B4D
 
             bool InAnyZone(float x, float z) => zones.Any(zone => zone.Contains(x, z));
 
-            var objectives = root.GetComponentsInChildren<B4DObjective>(false).ToList();
+            var objectives = Gather<B4DObjective>(root);
             foreach (var objective in objectives)
             {
                 var pos = objective.transform.position;
@@ -102,17 +112,17 @@ namespace B4D
                     Err($"chapter {chapter} has more than one objective", root);
             }
 
-            var gates = root.GetComponentsInChildren<B4DGate>(false).ToList();
+            var gates = Gather<B4DGate>(root);
             if (objectives.Count > 0 && gates.Count != objectives.Count)
                 Warn($"the map has {objectives.Count} objectives but {gates.Count} gates; the game expects one gate per chapter", root);
 
-            foreach (var barrel in root.GetComponentsInChildren<B4DBarrel>(false))
+            foreach (var barrel in Gather<B4DBarrel>(root))
             {
                 var p = barrel.transform.position;
                 if (!InAnyZone(p.x, p.z)) Warn($"a fuel barrel at {p.x:0.#}, {p.z:0.#} sits outside every zone and can never be shot", barrel);
             }
 
-            foreach (var drop in root.GetComponentsInChildren<B4DDropHazard>(false))
+            foreach (var drop in Gather<B4DDropHazard>(root))
             {
                 var p = drop.transform.position;
                 if (!InAnyZone(p.x, p.z)) Warn($"drop hazard \"{drop.label}\" at {p.x:0.#}, {p.z:0.#} sits outside every zone and can never be triggered", drop);
@@ -120,11 +130,34 @@ namespace B4D
                     Err($"drop hazard \"{drop.label}\" has its cable anchor at or below the load", drop);
             }
 
-            foreach (var prop in root.GetComponentsInChildren<B4DProp>(false))
+            foreach (var prop in Gather<B4DProp>(root))
             {
                 if (string.IsNullOrWhiteSpace(prop.material)) Err($"a {prop.type} prop has no material", prop);
                 if (prop.solid && (prop.colliderHalfExtents.x <= 0f || prop.colliderHalfExtents.y <= 0f))
                     Err($"a solid {prop.type} prop has a zero sized collider", prop);
+            }
+
+            foreach (var model in Gather<B4DModelProp>(root))
+            {
+                var p = model.transform.position;
+                if (string.IsNullOrWhiteSpace(model.assetKey)) Err("a model prop has no asset key", model);
+                if (model.glb == null) Err($"model prop \"{model.assetKey}\" has no glb file assigned", model);
+                if (model.scale <= 0f) Err($"model prop \"{model.assetKey}\" has a scale of zero or less", model);
+                if (model.solid && (model.colliderHalfExtents.x <= 0f || model.colliderHalfExtents.y <= 0f))
+                    Err($"model prop \"{model.assetKey}\" is solid but has a zero sized collider", model);
+                if (!InAnyZone(p.x, p.z))
+                    Warn($"model prop \"{model.assetKey}\" sits outside every zone, so no player will ever see it", model);
+            }
+
+            // Two props sharing a key must share a file, or one silently wins.
+            var byKey = Gather<B4DModelProp>(root)
+                .Where(m => !string.IsNullOrWhiteSpace(m.assetKey))
+                .GroupBy(m => m.assetKey);
+            foreach (var group in byKey)
+            {
+                var distinct = group.Select(m => m.glb).Distinct().Count();
+                if (distinct > 1)
+                    Err($"{distinct} different files are all called \"{group.Key}\"; give them separate keys", group.First());
             }
 
             return problems;

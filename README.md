@@ -42,6 +42,46 @@ has a Select button that pings the object responsible.
 Zones draw as boxes in the scene view, and a zone connected to nothing is drawn
 red, since that is the one mistake that makes a map unplayable.
 
+## Building with Unity art
+
+You do not have to design a level against grey boxes. Drop in whatever scenery
+you like, a warehouse, a crate pack, anything from the Asset Store, and build
+the map against it.
+
+Mark it with **GameObject ▸ Blox 4 Dead ▸ Mark As Reference Scenery**. Reference
+scenery is never exported and never reaches the game, so nothing is
+redistributed and no licence is stretched. It is there so you can see what you
+are doing. Its ground footprint draws in the scene view so you can tell what a
+zone still has to cover.
+
+Then derive the map data from what you built:
+
+| Tool | What it does |
+| --- | --- |
+| **Zone From Selection** | Creates a zone fitted to the selected art, with the roof taken from its height. |
+| **Fit Zone To Selection** | Resizes an existing zone to cover the art selected alongside it. |
+| **Blocking Prop From Selection** | Turns the selected art into a solid the players collide with. |
+| **Fit Collider To Renderers** | Takes a prop's collider extents from the art beneath it. |
+
+The art stays in Unity. Only the boxes and the gameplay objects travel.
+
+### Shipping the art itself
+
+If you do want a mesh in the game, use **B4D Model Prop**. Point it at a `.glb`
+file and the exporter carries it into the map, either inline as base64 (keeping
+the game a single self contained page) or as a separate file copied to an
+`assets` folder beside the map.
+
+The game reads a practical subset of glTF: indexed triangles, normals, texture
+coordinates, vertex colours, and PBR base colour with an embedded texture.
+Anything it cannot read falls back to a plain box, and the collider comes from
+the map data either way, so the collision players feel is identical whether or
+not the art loaded.
+
+Check the licence first. Plenty of Asset Store packs allow use in a built game
+but forbid redistributing the source mesh, and a `.glb` served to a browser is
+about as redistributable as it gets. Reference scenery exists for that case.
+
 ## Coordinates
 
 Unity's axes match the game's directly, in metres, so nothing is converted.
@@ -138,7 +178,7 @@ move to the latest:
 Pin a specific release instead by adding a tag to the URL:
 
 ```
-https://github.com/H-XX-D/b4d-mapkit-unity.git#v1.0.1
+https://github.com/H-XX-D/b4d-mapkit-unity.git#v1.1.0
 ```
 
 ## Notes
