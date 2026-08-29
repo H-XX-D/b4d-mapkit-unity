@@ -62,15 +62,34 @@ Then derive the map data from what you built:
 | **Fit Zone To Selection** | Resizes an existing zone to cover the art selected alongside it. |
 | **Blocking Prop From Selection** | Turns the selected art into a solid the players collide with. |
 | **Fit Collider To Renderers** | Takes a prop's collider extents from the art beneath it. |
+| **Bake Selection To glb** | Bakes the art into a mesh the game can render. |
 
 The art stays in Unity. Only the boxes and the gameplay objects travel.
 
 ### Shipping the art itself
 
-If you do want a mesh in the game, use **B4D Model Prop**. Point it at a `.glb`
-file and the exporter carries it into the map, either inline as base64 (keeping
-the game a single self contained page) or as a separate file copied to an
-`assets` folder beside the map.
+Select the art and use **GameObject ▸ Blox 4 Dead ▸ Bake Selection To glb**.
+It bakes the meshes and materials into a `.glb` inside your project, adds a
+**B4D Model Prop** pointing at it, and fits the collider to the art. From there
+the exporter carries the file into the map, either inline as base64 (keeping the
+game a single self contained page) or as a separate file copied to an `assets`
+folder beside the map.
+
+What the baker handles: mesh filters and skinned meshes (frozen in their current
+pose), one primitive per submesh, per submesh materials, and base colour
+textures read back through a render target so compressed and non-readable
+imports work without touching their import settings.
+
+**On materials going black.** Unity has no single albedo property. Built-in
+Standard calls it `_Color` and `_MainTex`, URP calls it `_BaseColor` and
+`_BaseMap`, HDRP uses `_BaseColorMap`, and Shader Graph can call it anything.
+An exporter that reads only one of those gets nothing back and writes a
+`baseColorFactor` of black with no texture, which loads without any error and
+looks like a lighting bug. The baker probes all of these names, and when it
+still cannot find a base colour it bakes a plain grey and tells you which
+material and shader defeated it, because obviously-unfinished beats
+silently-black. If you see that warning, either use a simpler material on the
+prop or bake its look down to a texture first.
 
 The game reads a practical subset of glTF: indexed triangles, normals, texture
 coordinates, vertex colours, and PBR base colour with an embedded texture.
@@ -178,7 +197,7 @@ move to the latest:
 Pin a specific release instead by adding a tag to the URL:
 
 ```
-https://github.com/H-XX-D/b4d-mapkit-unity.git#v1.1.0
+https://github.com/H-XX-D/b4d-mapkit-unity.git#v1.0.1
 ```
 
 ## Notes
