@@ -1,3 +1,4 @@
+# Unity generates these per project; they are not part of the package.
 Library/
 Temp/
 Obj/
@@ -6,3 +7,7 @@ Logs/
 *.csproj
 *.sln
 .DS_Store
+
+# The compile check ships its own project file on purpose, so check.sh works
+# from a fresh clone. Without this exception the rule above swallows it.
+!Tools~/compile-check/CompileCheck.csproj

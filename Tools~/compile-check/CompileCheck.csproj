@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Compiles the whole package against the reference stubs beside this file, so
+    a build machine with no Unity on it can still type check every script.
+
+    LangVersion is pinned to what Unity 2021.3 accepts, so a newer language
+    feature that would fail inside Unity fails here first.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <OutputType>Library</OutputType>
+    <AssemblyName>B4DMapKit.CompileCheck</AssemblyName>
+    <NoWarn>CS0169;CS0414;CS0649;CS0108;CS0067</NoWarn>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <!-- This only ever type checks, so skip the source control and packaging
+         machinery. It also stops the build failing when the surrounding folder
+         has a git repository the build user cannot read. -->
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+    <EnableSourceLink>false</EnableSourceLink>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="UnityStubs.cs" />
+    <Compile Include="UnityEditorStubs.cs" />
+    <Compile Include="../../Runtime/**/*.cs" />
+    <Compile Include="../../Editor/**/*.cs" />
+  </ItemGroup>
+
+</Project>
