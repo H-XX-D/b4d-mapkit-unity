@@ -1,8 +1,10 @@
 {
   "name": "com.blox4dead.mapkit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "displayName": "Blox 4 Dead Map Kit",
   "description": "Author Blox 4 Dead campaign maps in the Unity scene view and export them as campaign JSON the game loads directly.",
   "unity": "2021.3",
-  "author": { "name": "Blox 4 Dead" }
+  "author": {
+    "name": "Blox 4 Dead"
+  }
 }

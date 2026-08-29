@@ -125,6 +125,22 @@ Adding a type means adding a builder in the game, a row to the field table in
 this plugin, and the name to the schema enum. No new class is needed: the
 editor drives its fields off that table.
 
+## Updating
+
+Unity pins a git package to the exact commit it first resolved, recorded in
+`Packages/packages-lock.json`, so it will not pick up new work on its own. To
+move to the latest:
+
+- Package Manager, select the package, then **Update**, or
+- remove the entry for `com.blox4dead.mapkit` from `Packages/packages-lock.json`
+  and reopen the project.
+
+Pin a specific release instead by adding a tag to the URL:
+
+```
+https://github.com/H-XX-D/b4d-mapkit-unity.git#v1.0.1
+```
+
 ## Notes
 
 Duplicating a simple prop around the level is cheap in the map file: props that
@@ -133,4 +149,4 @@ list on export, and expanded back into individual objects on import.
 
 ## Licence
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE.md](LICENSE.md).
