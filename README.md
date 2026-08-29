@@ -1,14 +1,13 @@
 # Blox 4 Dead Map Kit for Unity
 
-Author campaign maps in the Unity scene view and export them as JSON the game
-loads directly. No engine code changes to add a map.
+Build levels in Unity the way you normally would, then mark up the gameplay.
+The kit reads your scene and writes a map file the game loads.
 
-```
-Unity scene  ──►  campaign JSON  ──►  playable map
-```
+Nothing about your usual workflow changes. Prefabs, ProBuilder, imported art,
+Asset Store packs, your own meshes, all of it works. The kit sits on top and
+only cares about a handful of markers you add.
 
-The Unreal edition exports the identical format:
-[b4d-mapkit-unreal](https://github.com/H-XX-D/b4d-mapkit-unreal).
+---
 
 ## Install
 
@@ -18,166 +17,202 @@ Package Manager ▸ **Add package from git URL**:
 https://github.com/H-XX-D/b4d-mapkit-unity.git
 ```
 
-Or clone it into `Packages/com.blox4dead.mapkit`. Unity 2021.3 or newer.
+Unity 2021.3 or newer. To pin a release, add a tag: `...unity.git#v1.5.0`.
 
-Pin a release by adding a tag: `...b4d-mapkit-unity.git#v1.3.0`. Unity locks a
-git package to the commit it first resolved, so use **Update** in Package
-Manager to move forward, or delete the entry from `Packages/packages-lock.json`.
+Unity locks a git package to the commit it first resolved, so use **Update** in
+Package Manager to pull newer versions.
 
-## Start here
+---
 
-- [PLAYTESTING.md](PLAYTESTING.md), getting a map you edited into the game.
-- [VERIFICATION.md](VERIFICATION.md), what is proven and what is not. Worth
-  reading first if you are the one testing this in Unity.
-- [LICENSING.md](LICENSING.md), what you can ship, and the Asset Store caveat.
+## Quick start
+
+Five steps. You can stop after step 3 and already be playtesting the layout.
+
+### 1. Build the level normally
+
+Open a scene and lay it out however you like. Drag in prefabs, block it out with
+ProBuilder, drop in a warehouse from the Asset Store. Do not think about the
+kit yet.
+
+### 2. Set up the campaign
+
+**GameObject ▸ Blox 4 Dead ▸ Set Up Campaign In This Scene**
+
+This adds a campaign root and marks everything already in the scene as
+**reference scenery**, meaning your art is never exported and never leaves
+Unity. It is there so you can see what you are doing.
+
+Select the campaign root and set:
+
+- **Id**: a name, lower case with underscores, e.g. `cold_storage`
+- **Index**: which campaign slot it replaces. Use **2**, **3** or **4**.
+- **Theme**: leave as `slaughterhouse` for now, it picks the material palette.
+
+### 3. Draw zones over the walkable space
+
+**GameObject ▸ Blox 4 Dead ▸ Zone**, then drag the box by its faces to cover a
+room or corridor. Or select some art and use **Zone From Selection** to fit a
+zone to it automatically.
+
+This is the one concept that matters, so it gets its own section below.
+
+### 4. Bring your collision across
+
+**Select your level art ▸ GameObject ▸ Blox 4 Dead ▸ Blocking Props From
+Colliders**
+
+A level built normally already has colliders on it. This turns them into solids
+the game blocks on. Box colliders keep their rotation; anything else uses its
+bounds. Triggers are skipped.
+
+The results are invisible in the game. They only block movement.
+
+### 5. Add the gameplay
+
+Each chapter needs one **Objective** and one **Gate**, both from
+**GameObject ▸ Blox 4 Dead**. Optionally scatter **Fuel Barrels** and
+**Drop Hazards**.
+
+Then open **Window ▸ Blox 4 Dead ▸ Map Kit** and press **Check map**. It lists
+everything still wrong or worth knowing, and every entry has a Select button
+that jumps you to the object responsible.
+
+---
 
 ## Zones are the map
 
-The walkable area is the union of the zones. Where two zones overlap by more
-than 1.5 metres, that overlap is the doorway between them. Navigation, spawning,
-objective placement and the interior architecture pass are all derived from the
-zone list, so authoring a map is mostly drawing boxes and naming them.
+The one thing to understand.
 
-A zone that overlaps nothing else can never be entered. That is an error and the
-exporter refuses to write the file.
+The walkable area is the union of the zones. **Where two zones overlap by more
+than 1.5 metres, that overlap is the doorway between them.** Navigation,
+spawning, objective placement and the game's own interior decoration are all
+derived from the zone list.
+
+So authoring a map is mostly drawing boxes over the space you want players to
+walk through, and making sure connected rooms overlap.
+
+A zone that overlaps nothing else can never be entered. That is an error, and
+the exporter refuses to write the file. Zones are drawn in the scene view, and
+an unconnected one is drawn **red**.
+
+Zones do not have to match your art exactly. They describe where players can
+walk, not what the room looks like.
+
+---
 
 ## Components
 
-Add them from **GameObject ▸ Blox 4 Dead**. They land under the campaign root
-and near the scene view camera.
+All under **GameObject ▸ Blox 4 Dead**. They land near the scene view camera and
+parent themselves to the campaign root.
 
 | Component | What it is |
 | --- | --- |
-| B4D Campaign | One per scene. Holds the id, slot, theme and extraction. |
-| B4D Zone | A room or corridor, dragged by the face with a box handle. |
-| B4D Objective | A chapter's device, with its nodes and cart destination. |
-| B4D Gate | The checkpoint door that objective opens. |
-| B4D Barrel | A barrel that goes up when shot. |
-| B4D Drop Hazard | A heavy load on a cable that falls when shot. |
-| B4D Prop | Procedural set dressing. Pick a type, fill in its numbers. |
-| B4D Model Prop | A real mesh, supplied as a `.glb`. |
-| B4D Reference Scenery | Art for authoring only. Never exported. |
+| **Campaign** | One per scene. Id, slot, theme. |
+| **Zone** | A room or corridor. Drag by the faces. |
+| **Objective** | A chapter's device, with its stations and cart destination. |
+| **Gate** | The checkpoint door that objective opens. |
+| **Fuel Barrel** | Goes up when shot. |
+| **Drop Hazard** | A load on a cable that falls when shot. |
+| **Prop** | Procedural set dressing built from numbers. |
+| **Model Prop** | A real mesh, from a `.glb`. |
+| **Reference Scenery** | Art for authoring only. Never exported. |
 
-Open **Window ▸ Blox 4 Dead ▸ Map Kit** to check, export or import a map. Every
-problem in the list has a Select button that pings the object responsible.
-
-Zones draw as boxes in the scene view, and a zone connected to nothing is drawn
-red, since that is the one mistake that makes a map unplayable.
-
-## Building with Unity art
-
-You do not have to design against grey boxes. Drop in whatever scenery you
-like, a warehouse, a crate pack, anything from the Asset Store, and build the
-map against it.
-
-Mark it with **Mark As Reference Scenery**. Reference scenery is never exported
-and never reaches the game, so nothing is redistributed. Its ground footprint
-draws in the scene view so you can tell what a zone still has to cover.
-
-Then derive the map data from what you built:
+## Tools
 
 | Tool | What it does |
 | --- | --- |
-| **Zone From Selection** | Creates a zone fitted to the art, roof from its height. |
-| **Fit Zone To Selection** | Resizes an existing zone to cover the art beside it. |
-| **Blocking Prop From Selection** | Turns the art into a solid players collide with. |
-| **Fit Collider To Renderers** | Takes collider extents from the art beneath. |
-| **Bake Selection To glb** | Bakes the art into a mesh the game can render. |
+| **Set Up Campaign In This Scene** | Adds the root, marks existing art as reference. |
+| **Zone From Selection** | Fits a zone to the selected art, roof from its height. |
+| **Fit Zone To Selection** | Resizes an existing zone to cover art selected with it. |
+| **Blocking Props From Colliders** | Turns existing Unity colliders into solids. |
+| **Blocking Prop From Selection** | One solid fitted to the selected art's bounds. |
+| **Fit Collider To Renderers** | Takes a prop's collider extents from its art. |
+| **Mark As Reference Scenery** | Keeps art out of the export. |
+| **Bake Selection To glb** | Bakes art into a mesh the game can render. |
 
-The art stays in Unity. Only the boxes and the gameplay objects travel.
+---
 
-### Shipping the art itself
+## Do I need to bake anything?
 
-**Bake Selection To glb** bakes the meshes and materials into a `.glb` inside
-your project, adds a **B4D Model Prop** pointing at it, and fits the collider.
-The exporter then carries the file into the map, either inline as base64
-(keeping the game a single self contained page) or as a separate file copied to
-an `assets` folder beside the map.
+**No.** Reference scenery plus blocking props gets you a playable, correctly
+shaped level. The game draws it with its own materials and its own decoration.
+That is the fastest path and it is the one to use while you are still finding
+out whether a layout is fun.
 
-The baker handles mesh filters and skinned meshes (frozen in their current
-pose), one primitive per submesh, per submesh materials, and base colour
-textures read back through a render target so compressed and non-readable
-imports work without touching their import settings.
+Bake only when you want a specific mesh to appear in the game.
+**Bake Selection To glb** does it in one step: it bakes the meshes and materials
+into a `.glb` in your project, adds a Model Prop pointing at it, and fits the
+collider.
 
-**On materials going black.** Unity has no single albedo property. Built-in
-Standard calls it `_Color` and `_MainTex`, URP calls it `_BaseColor` and
-`_BaseMap`, HDRP uses `_BaseColorMap`, and Shader Graph can call it anything. An
-exporter reading only one of those gets nothing back and writes a
-`baseColorFactor` of black with no texture, which loads without any error and
-looks like a lighting bug. The baker probes all of these, and when it still
-cannot find a base colour it bakes a plain grey and names the material and
-shader that defeated it, because obviously unfinished beats silently black.
+Two defaults matter for shipping, both on: **inline in map** carries the mesh
+inside the page rather than as a separate file, and **strip names** removes the
+mesh, node and material names that identify which pack a mesh came from.
 
-Two bake defaults exist for shipping. **Inline in map** carries the mesh inside
-the page rather than as a `.glb` in the network tab, and **strip names** removes
-the mesh, node, material and generator names, which are the part that identifies
-which pack a mesh came from. Both are on. Turn stripping off while debugging a
-bake.
+Materials going black is the classic failure here, and the baker guards against
+it. Unity has no single albedo property: Standard uses `_Color`, URP uses
+`_BaseColor`, HDRP uses `_BaseColorMap`, Shader Graph can use anything. An
+exporter that reads only one gets nothing and writes black, which loads without
+error and looks like a lighting bug. The baker probes all of them, and when it
+still cannot find a base colour it bakes plain grey and names the material and
+shader that defeated it.
 
-Check the licence before shipping purchased art, though a Discord Activity is a
-much better position than an open web build. See [LICENSING.md](LICENSING.md).
+See [LICENSING.md](LICENSING.md) before baking purchased art. Short version:
+shipping inside a Discord Activity is a good position, and the only thing worth
+checking is whether a pack explicitly forbids web builds.
 
-## Type checking without Unity
+---
+
+## Later: getting the map into the game
+
+Not needed while you are building. When you want to walk around it:
+
+**Window ▸ Blox 4 Dead ▸ Map Kit ▸ Export JSON**, then **drag the exported
+`.json` onto the game window**. That is the whole step. The game is a downloaded
+HTML file you open straight from disk, so there is no server and no build.
+
+The export refuses to write a file if the map has errors, so a file that comes
+out will load. Edit, export over the same file, drag it on again.
+
+[PLAYTESTING.md](PLAYTESTING.md) has the detail, including which campaign slots
+can be replaced.
+
+---
+
+## Reference
+
+- [PLAYTESTING.md](PLAYTESTING.md), getting a map into the game.
+- [VERIFICATION.md](VERIFICATION.md), what is proven and what is not. Read this
+  first if you are the one testing the kit itself.
+- [LICENSING.md](LICENSING.md), what you can ship.
+- `schema/b4d-campaign.schema.json`, the map format.
+- `schema/examples/example_depot.json`, a small map that passes every check.
+
+### Type checking without Unity
 
 ```
 ./Tools~/compile-check/check.sh
 ```
 
-Compiles every script against reference stubs of the Unity API, at the language
-version Unity 2021.3 accepts, so a machine with no Unity on it still catches
-type errors. Needs the .NET SDK (`brew install dotnet`). Unity ignores the
-folder because its name ends in `~`.
+Compiles every script against reference stubs of the Unity API, so a machine
+with no Unity still catches type errors. Needs the .NET SDK
+(`brew install dotnet`). Unity ignores the folder because its name ends in `~`.
 
-## Coordinates
+### Coordinates
 
-Unity's axes match the game's directly, in metres, so nothing is converted.
-Scene X and Z are the game's X and Z, and rotation about Y carries over.
+Unity's axes match the game's directly, in metres. Nothing is converted. Scene X
+and Z are the game's X and Z, and rotation about Y carries over.
 
-## The format
+### Procedural prop types
 
-`schema/b4d-campaign.schema.json` is the specification.
-`schema/examples/example_depot.json` is a small map that passes every check.
+Set dressing described by numbers rather than meshes, so the game builds it and
+the map file stays small.
 
-```json
-{
-  "schema": 1,
-  "id": "example_depot",
-  "index": 2,
-  "theme": "slaughterhouse",
-  "zones": [
-    { "name": "depot", "x": 0, "z": -12, "halfX": 30, "halfZ": 26,
-      "floor": "tile", "roof": 9, "lampY": 8.4 }
-  ],
-  "objectives": [
-    { "chapter": 1, "x": 0, "z": -12, "label": "RESTART THE DEPOT PUMPS",
-      "verb": "PUMPS", "kind": "pumps", "type": "signal", "duration": 20 }
-  ]
-}
-```
+`box`, `cylinder`, `grid`, `chainLine`, `carcassRows`, `lightPole`, `vat`,
+`pipeRun`, and `model` for a mesh from the map's asset table.
 
-### Prop types
+### What the checker looks for
 
-Procedural set dressing is described by numbers rather than meshes, so the game
-builds it and a map file stays small.
-
-| Type | What it builds |
-| --- | --- |
-| `box`, `cylinder` | A single solid, optionally blocking |
-| `grid` | A repeating grid of sub-props, e.g. pen rails |
-| `chainLine` | An overhead rail with hanging chains and hooks |
-| `carcassRows` | Rows of hanging carcasses on alternating offsets |
-| `lightPole` | A pole with a light on top |
-| `vat` | An open topped vessel with a surface disc |
-| `pipeRun` | A straight run of stepped horizontal pipes |
-| `model` | A mesh from the map's asset table |
-
-Adding a procedural type means a builder in the game, a row in
-`B4DPropSchema.Fields`, and the name in the schema enum. No new component is
-needed: the inspector drives its fields off that table.
-
-### What gets checked before export
-
-Errors, which block the export:
+Errors, which block export:
 
 - a zone that overlaps no other zone
 - two zones sharing a name, or a zone with no name, area or floor material
@@ -185,28 +220,20 @@ Errors, which block the export:
 - an escort objective with no cart destination
 - a solid prop with a zero sized collider
 - a drop hazard whose cable anchor is at or below its load
-- a model prop with no glb, or two different files sharing one asset key
+- a model prop with no glb, or two files sharing one asset key
 
 Warnings, which do not:
 
-- an objective outside every zone (the game relocates it at load)
-- a hazard outside every zone (nothing relocates those, so it can never fire)
+- an objective outside every zone, which the game relocates at load
+- a hazard outside every zone, which can therefore never fire
 - a breakers objective with no window
 - a gate count that does not match the objective count
 
-That last pair caught real defects in an existing hand authored campaign: two
-fuel barrels and a falling carcass rack sitting outside the walkable zones,
-left behind when the zones were moved and the set dressing was not.
-
-## Notes
-
-Duplicating a simple prop around the level is cheap in the map file: props that
-differ only in where they stand are collapsed into a single entry with an `at`
-list on export, and expanded back into individual objects on import.
-
-Model props cannot be imported back from a map file. A base64 blob cannot be
-turned into a project asset, so import skips them and says so.
+---
 
 ## Licence
 
-MIT. See [LICENSE.md](LICENSE.md) and [LICENSING.md](LICENSING.md).
+MIT, copyright H-XX-D. See [LICENSE.md](LICENSE.md).
+
+The Unreal edition exports the identical format:
+[b4d-mapkit-unreal](https://github.com/H-XX-D/b4d-mapkit-unreal).

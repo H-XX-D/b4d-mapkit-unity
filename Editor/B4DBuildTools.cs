@@ -126,6 +126,125 @@ namespace B4D
             Selection.activeGameObject = go;
         }
 
+
+        // ------------------------------------------------------------------
+        // working from a scene built the ordinary Unity way
+        // ------------------------------------------------------------------
+
+        /// Creates the campaign root and marks everything already in the scene as
+        /// reference, so a level built the normal way is ready to annotate without
+        /// rearranging anything.
+        [MenuItem(Menu + "Set Up Campaign In This Scene", false, 1)]
+        static void SetUpCampaign()
+        {
+            var campaign = Object.FindObjectOfType<B4DCampaign>();
+            if (campaign == null)
+            {
+                var go = new GameObject("Campaign");
+                Undo.RegisterCreatedObjectUndo(go, "Set Up Campaign");
+                campaign = go.AddComponent<B4DCampaign>();
+            }
+
+            // Anything already standing in the scene is art, not map data. Marking
+            // it reference keeps it out of the export and out of the checks.
+            var marked = 0;
+            foreach (var renderer in Object.FindObjectsOfType<MeshRenderer>())
+            {
+                var root = renderer.transform;
+                while (root.parent != null && root.parent != campaign.transform) root = root.parent;
+                if (root == campaign.transform) continue;
+                if (root.GetComponent<B4DReference>() != null) continue;
+                if (root.GetComponentInParent<B4DReference>() != null) continue;
+                Undo.AddComponent<B4DReference>(root.gameObject);
+                marked++;
+            }
+
+            Selection.activeGameObject = campaign.gameObject;
+            EditorUtility.DisplayDialog("Campaign ready",
+                $"Campaign root added and {marked} existing object(s) marked as reference scenery, "
+                + "so none of your art is exported.\n\n"
+                + "Next: draw zones over the walkable space, then add an objective and a gate per chapter. "
+                + "Window > Blox 4 Dead > Map Kit tells you what is still missing.",
+                "OK");
+        }
+
+        /// Turns the colliders a scene already has into solids the game blocks on.
+        /// A level built normally is already collidered, so this is usually the
+        /// fastest way to get its blocking geometry across.
+        [MenuItem(Menu + "Blocking Props From Colliders", false, 36)]
+        static void PropsFromColliders()
+        {
+            var colliders = Selection.gameObjects
+                .SelectMany(go => go.GetComponentsInChildren<Collider>())
+                .Where(c => c.enabled && !c.isTrigger)
+                .ToArray();
+
+            if (colliders.Length == 0)
+            {
+                EditorUtility.DisplayDialog("No colliders found",
+                    "Select objects that have colliders on them, or somewhere beneath them. "
+                    + "Triggers are skipped, since they do not block movement.", "OK");
+                return;
+            }
+
+            var root = CampaignRoot();
+            var group = new GameObject("Blocking from colliders");
+            Undo.RegisterCreatedObjectUndo(group, "Blocking Props From Colliders");
+            if (root) group.transform.SetParent(root, true);
+
+            var made = 0;
+            foreach (var collider in colliders)
+            {
+                var go = new GameObject(collider.name);
+                go.transform.SetParent(group.transform, true);
+
+                var prop = go.AddComponent<B4DProp>();
+                prop.type = B4DPropType.box;
+                prop.material = "steel";
+                prop.solid = true;
+                prop.colliderKind = Sanitise(collider.name);
+                prop.SyncFieldsToType();
+
+                // A box collider carries its own orientation, so keep it rather than
+                // falling back to an axis aligned box that would be too fat on the
+                // diagonal. Everything else uses its world bounds.
+                if (collider is BoxCollider box)
+                {
+                    var scale = collider.transform.lossyScale;
+                    var size = new Vector3(box.size.x * scale.x, box.size.y * scale.y, box.size.z * scale.z);
+                    var centre = collider.transform.TransformPoint(box.center);
+                    go.transform.position = new Vector3(centre.x, 0f, centre.z);
+                    go.transform.rotation = Quaternion.Euler(0f, collider.transform.eulerAngles.y, 0f);
+                    prop.colliderHalfExtents = new Vector2(Mathf.Abs(size.x) * 0.5f, Mathf.Abs(size.z) * 0.5f);
+                    SetValue(prop, "w", Mathf.Abs(size.x));
+                    SetValue(prop, "h", Mathf.Abs(size.y));
+                    SetValue(prop, "d", Mathf.Abs(size.z));
+                    SetValue(prop, "y", centre.y);
+                }
+                else
+                {
+                    var bounds = collider.bounds;
+                    go.transform.position = new Vector3(bounds.center.x, 0f, bounds.center.z);
+                    prop.colliderHalfExtents = new Vector2(bounds.extents.x, bounds.extents.z);
+                    SetValue(prop, "w", bounds.size.x);
+                    SetValue(prop, "h", bounds.size.y);
+                    SetValue(prop, "d", bounds.size.z);
+                    SetValue(prop, "y", bounds.center.y);
+                }
+                made++;
+            }
+
+            Selection.activeGameObject = group;
+            EditorUtility.DisplayDialog("Blocking props created",
+                $"{made} solid(s) created from existing colliders, under \"{group.name}\".\n\n"
+                + "They are invisible in the game: they only block movement. The art itself "
+                + "stays in Unity unless you bake it.", "OK");
+        }
+
+        [MenuItem(Menu + "Blocking Props From Colliders", true)]
+        static bool PropsFromCollidersEnabled()
+            => Selection.gameObjects.Any(go => go.GetComponentInChildren<Collider>() != null);
+
         static void SetValue(B4DProp prop, string key, float value)
         {
             var field = prop.values.Find(v => v.key == key);
@@ -133,6 +252,14 @@ namespace B4D
         }
 
         [MenuItem(Menu + "Mark As Reference Scenery", false, 33)]
+        static string Sanitise(string name)
+        {
+            var cleaned = new string(name.ToLowerInvariant()
+                .Select(c => char.IsLetterOrDigit(c) ? c : '-').ToArray()).Trim('-');
+            while (cleaned.Contains("--")) cleaned = cleaned.Replace("--", "-");
+            return string.IsNullOrEmpty(cleaned) ? "prop" : cleaned;
+        }
+
         static void MarkAsReference()
         {
             if (Selection.gameObjects.Length == 0)

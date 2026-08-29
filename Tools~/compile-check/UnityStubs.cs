@@ -536,6 +536,44 @@ namespace UnityEngine
         public static void DrawIcon(Vector3 center, string name) { }
     }
 
+    // -------------------------------------------------------------- colliders
+
+    public class Collider : Component
+    {
+        public bool enabled { get; set; }
+        public bool isTrigger { get; set; }
+        public Bounds bounds => default;
+        public Material sharedMaterial { get; set; }
+    }
+
+    public class BoxCollider : Collider
+    {
+        public Vector3 center { get; set; }
+        public Vector3 size { get; set; }
+    }
+
+    public class SphereCollider : Collider
+    {
+        public Vector3 center { get; set; }
+        public float radius { get; set; }
+    }
+
+    public class CapsuleCollider : Collider
+    {
+        public Vector3 center { get; set; }
+        public float radius { get; set; }
+        public float height { get; set; }
+        public int direction { get; set; }
+    }
+
+    public class MeshCollider : Collider
+    {
+        public Mesh sharedMesh { get; set; }
+        public bool convex { get; set; }
+    }
+
+    public class TerrainCollider : Collider { }
+
     // ------------------------------------------------------------- attributes
 
     [AttributeUsage(AttributeTargets.Field)] public class TooltipAttribute : Attribute { public TooltipAttribute(string tooltip) { } }
